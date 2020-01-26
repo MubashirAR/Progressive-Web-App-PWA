@@ -64,9 +64,10 @@ self.addEventListener('sync', function(event) {
   
   if (event.tag === 'mySync') {
     console.log('Service Worker sync: ', event);
-    event.waitUntil(async () => {
-      return new Promise((resolve, reject) => {
+    event.waitUntil(
+      new Promise((resolve, reject) => {
         try {
+          console.log('SW: Time to fetch');
           fetch('https://jsonplaceholder.typicode.com/posts', {
             method: 'POST',
             body: JSON.stringify({
@@ -78,10 +79,12 @@ self.addEventListener('sync', function(event) {
               'Content-type': 'application/json; charset=UTF-8',
             },
           })
-          .then(data => {
+          .then(response => {
+            console.log('SW: fetch response received');
             return response.json();
           })
           .then(data => {
+            console.log('SW: fetch data');
             console.log(data);
             resolve(data);
           })
@@ -97,6 +100,28 @@ self.addEventListener('sync', function(event) {
           // throw error;
         }
       })
-    });
+    );
   }
 });
+
+self.addEventListener('push', event => {
+  let text = event.data.text();
+  console.log('Service Worker: Push Received:', event);
+
+  const title = 'Ayy, new notification!';
+  const options = {
+    body: text,
+    icon: './icons/icon-192.png',
+    badge: './icons/icon-512.png'
+  }
+  console.log(title, options)
+  let notificationPromise = self.registration.showNotification(title, options);
+  event.waitUntil(notificationPromise);
+});
+self.addEventListener('notificationclick', event => {
+  console.log('SW: User clicked the notification.');
+  event.notification.close();
+  event.waitUntil(
+    clients.openWindow('https://linkedin.com/in/mubashirar')
+  )
+})
